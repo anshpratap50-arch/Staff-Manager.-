@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2563eb"><title>Staff Manager</title>
+<style>
+:root{--bg:#f3f6fb;--card:#fff;--tx:#1a2236;--mut:#6b7385;--pri:#2563eb;--ok:#16a34a;--bad:#dc2626;--warn:#d97706}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--tx);padding-bottom:76px}
+header{padding:16px;background:#fff;font-size:20px;font-weight:750;position:sticky;top:0;z-index:2;box-shadow:0 1px 4px #0001}
+main{padding:12px}.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px #0001}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.tile{background:#eaf2ff;border:0;border-radius:14px;padding:16px 8px;font-size:14px;font-weight:650;color:var(--tx)}
+.tile span{display:block;font-size:25px;margin-bottom:6px}.sec{font-weight:750;margin:14px 4px 8px}
+input{width:100%;padding:12px;border:1px solid #d5dbe6;border-radius:10px;font-size:15px;margin:5px 0}
+button{font:inherit;cursor:pointer}.b{background:var(--pri);color:#fff;border:0;border-radius:10px;padding:10px 14px}.s{background:#eef1f6;border:0;border-radius:8px;padding:7px 10px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #eef1f6;flex-wrap:wrap}.row:last-child{border:0}
+.mut{font-size:13px;color:var(--mut)}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#fff;padding:10px;border-radius:12px}.stat b{display:block;font-size:19px}
+.pill{border:0;border-radius:8px;padding:7px 12px;background:#eef1f6}.pill.on{background:var(--ok);color:white}.pill.abs.on{background:var(--bad)}.pill.half.on{background:var(--warn)}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #e3e8f0;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;padding:12px 4px;font-size:12px;color:var(--mut)}nav button.on{color:var(--pri);font-weight:750}
+</style></head>
+<body><header>👥 Staff Manager</header><main id="app"></main><nav id="nav"></nav>
+<script>
+const KEY='staff-manager-v1';
+let db;try{db=JSON.parse(localStorage.getItem(KEY))||null}catch(e){}
+if(!db)db={staff:[{id:1,name:'Shubham',role:'Staff'}],attendance:{},tasks:[],cash:[],view:'home',date:new Date().toISOString().slice(0,10)};
+const save=()=>localStorage.setItem(KEY,JSON.stringify(db));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const app=document.getElementById('app'),nav=document.getElementById('nav');
+function go(v){db.view=v;save();render()}
+function day(){return db.attendance[db.date]||(db.attendance[db.date]={})}
+function mark(id,status){day()[id]=Object.assign({},day()[id],{status});save();render()}
+function addStaff(){let n=document.getElementById('name').value.trim(),r=document.getElementById('role').value.trim()||'Staff';if(!n)return;db.staff.push({id:Date.now(),name:n,role:r});save();render()}
+function addTask(){let t=document.getElementById('task').value.trim();if(!t)return;db.tasks.push({id:Date.now(),title:t});save();render()}
+function delStaff(id){db.staff=db.staff.filter(x=>x.id!==id);save();render()}
+function render(){
+ const tabs=[['home','Home','🏠'],['staff','Staff','👥'],['attendance','Attendance','🗓️'],['settings','Settings','⚙️']];
+ nav.innerHTML=tabs.map(([v,l,i])=>`<button class="${db.view===v?'on':''}" onclick="go('${v}')">${i}<br>${l}</button>`).join('');
+ if(db.view==='home'){app.innerHTML=`<div class="grid">
+ <button class="tile" onclick="go('staff')"><span>👥</span>Staff List</button>
+ <button class="tile" onclick="go('attendance')"><span>🗓️</span>Attendance</button>
+ <button class="tile" onclick="go('tasks')"><span>📋</span>Manage Work</button>
+ <button class="tile" onclick="go('reports')"><span>📊</span>Reports</button></div>
+ <div class="sec">Quick Summary</div><div class="card"><div class="row"><span>Total staff</span><b>${db.staff.length}</b></div><div class="row"><span>Present today</span><b>${Object.values(day()).filter(x=>x.status==='P').length}</b></div><div class="row"><span>Tasks</span><b>${db.tasks.length}</b></div></div>`}
+ else if(db.view==='staff'){app.innerHTML=`<div class="card"><b>Add Staff</b><input id="name" placeholder="Staff name"><input id="role" placeholder="Role / department"><button class="b" onclick="addStaff()">Add Staff</button></div><div class="card">${db.staff.map(s=>`<div class="row"><div><b>${esc(s.name)}</b><div class="mut">${esc(s.role)}</div></div><button class="s" onclick="delStaff(${s.id})">Delete</button></div>`).join('')||'<p class="mut">No staff added yet</p>'}</div>`}
+ else if(db.view==='attendance'){let d=day(),p=Object.values(d).filter(x=>x.status==='P').length;app.innerHTML=`<div class="card"><b>Attendance</b><input type="date" value="${db.date}" onchange="db.date=this.value;save();render()"><div class="stats"><div class="stat"><span class="mut">Present</span><b>${p}</b></div><div class="stat"><span class="mut">Absent</span><b>${Object.values(d).filter(x=>x.status==='A').length}</b></div><div class="stat"><span class="mut">Half day</span><b>${Object.values(d).filter(x=>x.status==='H').length}</b></div></div></div>${db.staff.map(s=>`<div class="card"><b>${esc(s.name)}</b><div class="row"><button class="pill ${d[s.id]?.status==='P'?'on':''}" onclick="mark(${s.id},'P')">Present</button><button class="pill abs ${d[s.id]?.status==='A'?'on':''}" onclick="mark(${s.id},'A')">Absent</button><button class="pill half ${d[s.id]?.status==='H'?'on':''}" onclick="mark(${s.id},'H')">Half Day</button></div></div>`).join('')}`}
+ else if(db.view==='tasks'){app.innerHTML=`<div class="card"><b>Manage Work</b><input id="task" placeholder="Task title"><button class="b" onclick="addTask()">Add Task</button></div><div class="card">${db.tasks.map(t=>`<div class="row">${esc(t.title)}</div>`).join('')||'<p class="mut">No tasks yet</p>'}</div>`}
+ else if(db.view==='reports'){app.innerHTML=`<div class="card"><b>Reports</b><div class="row"><span>Total staff</span><b>${db.staff.length}</b></div><div class="row"><span>Present today</span><b>${Object.values(day()).filter(x=>x.status==='P').length}</b></div><div class="row"><span>Absent today</span><b>${Object.values(day()).filter(x=>x.status==='A').length}</b></div><div class="row"><span>Total tasks</span><b>${db.tasks.length}</b></div></div>`}
+ else {app.innerHTML=`<div class="card"><b>Settings</b><p class="mut">Staff Manager version 1.0</p><p class="mut">Your staff and attendance data is stored locally on this device.</p><button class="s" onclick="if(confirm('Clear all app data?')){localStorage.removeItem(KEY);location.reload()}">Reset app data</button></div>`}
+}
+render();
+</script></body></html>
