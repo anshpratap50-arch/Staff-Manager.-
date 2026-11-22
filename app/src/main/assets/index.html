@@ -1,0 +1,86 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staff Manager</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f6fb;color:#1a2236;font-family:Arial,sans-serif;padding-bottom:70px}
+header{background:#2563eb;color:white;padding:20px;font-size:22px;font-weight:bold}
+main{padding:15px}
+.card{background:white;padding:16px;border-radius:14px;margin:12px 0;box-shadow:0 2px 8px #0001}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{border:0;border-radius:10px;padding:12px;background:#2563eb;color:white;font-size:15px}
+input{width:100%;padding:12px;border:1px solid #ddd;border-radius:9px;margin:7px 0;font-size:15px}
+nav{position:fixed;bottom:0;background:white;width:100%;display:flex}
+nav button{flex:1;background:white;color:#2563eb;border-radius:0;font-size:13px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee}
+</style>
+</head>
+<body>
+<header>👥 Staff Manager</header>
+<main id="app"></main>
+<nav>
+<button onclick="home()">Home</button>
+<button onclick="staff()">Staff</button>
+<button onclick="attendance()">Attendance</button>
+<button onclick="reports()">Reports</button>
+</nav>
+<script>
+const key='staff-manager-data';
+let data=JSON.parse(localStorage.getItem(key)||'{"staff":[{"name":"Shubham","role":"Staff"}],"attendance":{}}');
+function save(){localStorage.setItem(key,JSON.stringify(data))}
+function show(html){document.getElementById('app').innerHTML=html}
+function home(){
+show(`<div class="grid">
+<button onclick="staff()">👥 Staff List</button>
+<button onclick="attendance()">🗓️ Attendance</button>
+<button onclick="reports()">📊 Reports</button>
+<button onclick="settings()">⚙️ Settings</button>
+</div><div class="card"><h3>Quick Summary</h3>
+<div class="row">Total Staff <b>${data.staff.length}</b></div>
+<div class="row">Present Today <b>${Object.values(data.attendance).filter(x=>x==='P').length}</b></div></div>`);
+}
+function staff(){
+show(`<div class="card"><h3>Add Staff</h3>
+<input id="name" placeholder="Staff Name">
+<input id="role" placeholder="Department / Role">
+<button onclick="addStaff()">Add Staff</button></div>
+<div class="card"><h3>Staff List</h3>
+${data.staff.map((s,i)=>`<div class="row">${s.name} - ${s.role}
+<button onclick="removeStaff(${i})">Delete</button></div>`).join('')}</div>`);
+}
+function addStaff(){
+let n=document.getElementById('name').value.trim();
+let r=document.getElementById('role').value.trim()||'Staff';
+if(!n)return alert('Enter staff name');
+data.staff.push({name:n,role:r});save();staff();
+}
+function removeStaff(i){data.staff.splice(i,1);save();staff()}
+function attendance(){
+show(`<div class="card"><h3>Attendance</h3>
+<input type="date" id="day" value="${new Date().toISOString().slice(0,10)}" onchange="attendance()">
+${data.staff.map((s,i)=>`<div class="row">${s.name}
+<button onclick="mark(${i},'P')">Present</button>
+<button onclick="mark(${i},'A')">Absent</button></div>`).join('')}</div>`);
+}
+function mark(i,v){
+let d=document.getElementById('day').value;
+data.attendance[d+'-'+i]=v;save();attendance();
+}
+function reports(){
+show(`<div class="card"><h3>Reports</h3>
+<div class="row">Total Staff <b>${data.staff.length}</b></div>
+<div class="row">Attendance Records <b>${Object.keys(data.attendance).length}</b></div></div>`);
+}
+function settings(){
+show(`<div class="card"><h3>Settings</h3>
+<p>Staff Manager Version 1.0</p>
+<p>Data is saved on this device.</p></div>`);
+}
+home();
+</script>
+</body>
+</html>
